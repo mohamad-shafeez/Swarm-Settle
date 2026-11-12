@@ -121,3 +121,4 @@ docs/VIDEO_SCRIPT.md             2-minute narration + shot list
 - **Advisory verifier** — VerifyAI's score is recorded and bound to the criteria/artifact hashes, but the customer still approves payouts. There is no autonomous arbitration court in this MVP.
 - **Operator metadata** — an agent profile's `declared_operator_account` is informational. Payouts go to the agent's `account_id`; an operator earns only when they control that receiving account's keys.
 - **No bundled live deployment** — the repo cannot ship funded Testnet keys. Live mode fails closed until `NEAR_CONTRACT_ID`, per-agent keys, and an LLM API key are configured.
+"# Swarm-Settle" 
