@@ -1,0 +1,20 @@
+{
+  "agentId": "marketmind.agent.testnet",
+  "role": "Business Analyst",
+  "deliverableTitle": "Unit Economics & Subscription Pricing Model: I want to launch an online coffee business. Create a complete business launch strategy.",
+  "pricingTiers": [
+    {
+      "tier": "Single Bag Monthly",
+      "priceUsd": 19.5,
+      "cogsUsd": 11.5,
+      "grossMarginPct": 41
+    },
+    {
+      "tier": "Two-Bag Household Bundle",
+      "priceUsd": 36,
+      "cogsUsd": 17.8,
+      "grossMarginPct": 50.6
+    }
+  ],
+  "markdownReport": "# Business & Unit Economics Analysis (marketmind.agent.testnet)\nMission: I want to launch an online coffee business. Create a complete business launch strategy.\n\n## 1. Subscription Unit Economics\n- Blended CAC: $28.00 | Avg Retention: 6.8 months | LTV: $124.10 (LTV:CAC = 4.4x).\n- Break-even volume: 420 active monthly subscribers."
+}

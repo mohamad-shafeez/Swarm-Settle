@@ -1,0 +1,228 @@
+:root {
+  --bg-alabaster: #FAF8F5;
+  --bg-card: #FFFFFF;
+  --bg-muted: #F3EFEA;
+  --text-ink: #18181B;
+  --text-stone: #57534E;
+  --border-warm: #E4DFD5;
+  --accent-forest: #1B4332;
+  --accent-forest-soft: #E8F3EC;
+  --accent-amber: #D97706;
+  --accent-amber-soft: #FEF3C7;
+  --danger-rose: #9F1239;
+  --danger-rose-soft: #FFE4E6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-alabaster);
+  color: var(--text-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ss-shell {
+  min-height: 100vh;
+  background: var(--bg-alabaster);
+  color: var(--text-ink);
+  padding-bottom: 64px;
+}
+
+.ss-banner {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-warm);
+}
+
+.ss-banner-live {
+  background: var(--accent-forest-soft);
+  color: var(--accent-forest);
+  border-bottom-color: rgba(27, 67, 50, 0.25);
+}
+
+.ss-banner-sim {
+  background: var(--accent-amber-soft);
+  color: #78350F;
+  border-bottom-color: #FCD34D;
+}
+
+.ss-container {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.ss-header {
+  padding: 20px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-warm);
+}
+
+.ss-brand-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ss-brand-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-stone);
+}
+
+.ss-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 0;
+}
+
+.ss-tab {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-warm);
+  background: var(--bg-card);
+  color: var(--text-stone);
+  transition: all 0.15s ease;
+}
+
+.ss-tab:hover {
+  background: var(--bg-muted);
+  color: var(--text-ink);
+}
+
+.ss-tab-active {
+  background: var(--accent-forest);
+  color: #FFFFFF;
+  border-color: var(--accent-forest);
+}
+
+.ss-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-warm);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.04);
+}
+
+.ss-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ss-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ss-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ss-badge-green {
+  background: var(--accent-forest-soft);
+  color: var(--accent-forest);
+}
+
+.ss-badge-amber {
+  background: var(--accent-amber-soft);
+  color: #92400E;
+}
+
+.ss-badge-stone {
+  background: var(--bg-muted);
+  color: var(--text-stone);
+}
+
+.ss-btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-warm);
+  background: var(--bg-card);
+  color: var(--text-ink);
+  transition: all 0.15s ease;
+}
+
+.ss-btn-primary {
+  background: var(--accent-forest);
+  color: #FFFFFF;
+  border-color: var(--accent-forest);
+}
+
+.ss-btn-primary:hover {
+  background: #143325;
+}
+
+.ss-input, .ss-textarea {
+  width: 100%;
+  background: var(--bg-alabaster);
+  border: 1px solid var(--border-warm);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-ink);
+}
+
+.ss-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ss-kpi-box {
+  background: var(--bg-alabaster);
+  border: 1px solid var(--border-warm);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.ss-kpi-label {
+  font-size: 11px;
+  color: var(--text-stone);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.ss-kpi-val {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 4px;
+  color: var(--text-ink);
+}

@@ -1,0 +1,14 @@
+{
+  "name": "swarm-settle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SwarmSettle — Multi-agent work coordination, SHA-256 deliverable verification, and escrow settlement on NEAR Testnet",
+  "scripts": {
+    "test": "node scripts/test-contract-invariants.mjs",
+    "verify": "node scripts/verify.mjs",
+    "agents:sim": "node agents/agent-runner.mjs --sim",
+    "agents:live": "node agents/agent-runner.mjs --live",
+    "deploy:testnet": "bash scripts/deploy-testnet.sh"
+  }
+}

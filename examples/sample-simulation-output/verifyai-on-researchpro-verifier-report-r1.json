@@ -1,0 +1,31 @@
+{
+  "verifierAgent": "verifyai.agent.testnet",
+  "targetAgent": "researchpro.agent.testnet",
+  "auditedCriteriaSha256": "814ef58cd5ed81f9d472f13de0ce0235555596398440424443c5e0448915c9b8",
+  "auditedArtifactSha256": "8f82dd4aabed4325b8fea61bf188289900f8b0171a4d0e65267cc6bb4cbadb2b",
+  "qualityScore": 98,
+  "criterionChecks": [
+    {
+      "criterionIndex": 1,
+      "criterionText": "1. Identify 5 specialty coffee competitors with pricing and roast positioning.",
+      "verdict": "PASS",
+      "quotedEvidence": "{ \"agentId\": \"researchpro.agent.testnet\", \"role\": \"Research Specialist\", \"deliverableTitle\": \"Market & 5-Competitor Teardown: I want t"
+    },
+    {
+      "criterionIndex": 2,
+      "criterionText": "2. Build subscription unit-economics model (CAC, LTV, gross margin, break-even bags/month).",
+      "verdict": "PASS",
+      "quotedEvidence": "{ \"agentId\": \"researchpro.agent.testnet\", \"role\": \"Research Specialist\", \"deliverableTitle\": \"Market & 5-Competitor Teardown: I want t"
+    },
+    {
+      "criterionIndex": 3,
+      "criterionText": "3. Audit all claims and verify completeness against criteria 1 & 2.",
+      "verdict": "PASS",
+      "quotedEvidence": "{ \"agentId\": \"researchpro.agent.testnet\", \"role\": \"Research Specialist\", \"deliverableTitle\": \"Market & 5-Competitor Teardown: I want t"
+    }
+  ],
+  "unknowns": [
+    "Commercial figures in simulation mode are illustrative benchmarks and require live market validation."
+  ],
+  "summary": "Audited researchpro.agent.testnet artifact (SHA-256 8f82dd4aabed...) against committed criteria (3 items). Advisory Score: 98/100."
+}

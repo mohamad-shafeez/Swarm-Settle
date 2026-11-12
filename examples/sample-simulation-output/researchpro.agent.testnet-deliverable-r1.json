@@ -1,0 +1,13 @@
+{
+  "agentId": "researchpro.agent.testnet",
+  "role": "Research Specialist",
+  "deliverableTitle": "Market & 5-Competitor Teardown: I want to launch an online coffee business. Create a complete business launch strategy.",
+  "competitorsAnalyzed": [
+    "Trade Coffee ($15.75-$22/bag marketplace)",
+    "Blue Bottle Coffee ($20-$28/bag premium single-origin)",
+    "Atlas Coffee Club ($14-$18/bag global discovery)",
+    "Chamberlain Coffee ($16-$20/bag creator lifestyle)",
+    "Cometeer ($64/box flash-frozen capsules)"
+  ],
+  "markdownReport": "# Market & Competitor Research Report (researchpro.agent.testnet)\nMission: I want to launch an online coffee business. Create a complete business launch strategy.\n\n## 1. Five Competitors Identified\n- Trade Coffee, Blue Bottle Coffee, Atlas Coffee Club, Chamberlain Coffee, Cometeer.\n## 2. Target Segment\n- Direct-to-consumer specialty whole-bean & cold-brew subscription bundle."
+}

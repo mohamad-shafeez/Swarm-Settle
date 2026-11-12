@@ -1,0 +1,38 @@
+[package]
+name = "swarm-settle-contract"
+description = "SwarmSettle: Multi-agent work coordination, role-based crew formation, SHA-256 evidence anchoring, and callback-safe escrow settlement on NEAR Protocol"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/swarm-settle/swarm-settle"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.13.3-rust-1.82.0"
+image_digest = "sha256:baa76ef12c6fd3ae1bf2ca4fb011f21d1a2c88565d918b5a0fa4bdde4d211d34"
+passed_env = []
+container_build_command = [
+    "cargo",
+    "near",
+    "build",
+    "non-reproducible-wasm",
+    "--locked",
+]
+
+[dependencies]
+near-sdk = { version = "5.6.0", features = ["unit-testing", "legacy"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+near-sdk = { version = "5.6.0", features = ["unit-testing", "legacy"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

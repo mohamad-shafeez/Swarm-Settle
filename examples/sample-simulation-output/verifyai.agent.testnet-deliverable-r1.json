@@ -1,0 +1,6 @@
+{
+  "agentId": "verifyai.agent.testnet",
+  "role": "Quality Auditor",
+  "deliverableTitle": "Preliminary QA Checklist & Hash Manifest: I want to launch an online coffee business. Create a complete business launch strategy.",
+  "markdownReport": "# Quality Assurance Readiness Manifest (verifyai.agent.testnet)\nMission: I want to launch an online coffee business. Create a complete business launch strategy.\nCommitted Criteria SHA-256: 814ef58cd5ed81f9d472f13de0ce0235555596398440424443c5e0448915c9b8\nReady to audit peer deliverables upon submission."
+}
