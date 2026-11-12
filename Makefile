@@ -1,13 +1,12 @@
-.PHONY: verify test-invariants demo-check contract-test contract-build app-build
+.PHONY: verify test-invariants check contract-test contract-build app-install app-build app-dev demo-record
 
 verify:
-	bash scripts/verify.sh
+	node scripts/verify.mjs
 
 test-invariants:
-	node --test scripts/test-contract-invariants.mjs
+	node scripts/test-contract-invariants.mjs
 
-demo-check:
-	node scripts/demo-check.mjs
+check: test-invariants verify app-build
 
 contract-test:
 	cd contract && cargo test
@@ -15,5 +14,14 @@ contract-test:
 contract-build:
 	cd contract && cargo near build non-reproducible-wasm
 
+app-install:
+	cd app && npm install
+
 app-build:
-	cd app && npm install && npm run build
+	cd app && npm run build
+
+app-dev:
+	cd app && npm run dev
+
+demo-record:
+	node scripts/record-demo.mjs

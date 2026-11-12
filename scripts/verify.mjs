@@ -40,8 +40,10 @@ const REQUIRED_FILES = [
   'scripts/deploy-testnet.sh',
   'scripts/test-contract-invariants.mjs',
   'scripts/verify.mjs',
+  'scripts/record-demo.mjs',
   'docs/ARCHITECTURE.md',
   'docs/DEMO_SCRIPT.md',
+  'docs/VIDEO_SCRIPT.md',
 ];
 
 let failed = false;
@@ -75,6 +77,25 @@ if (appSrc.includes('approve_selected_contributions')) {
   failed = true;
 } else {
   console.log('  [PASS] App.tsx method calls match contract/src/lib.rs.');
+}
+
+const REQUIRED_TEST_IDS = [
+  'submit-create-job-btn',
+  'lock-crew-btn',
+  'recompute-sha256-btn',
+  'tamper-file-btn',
+  'restore-file-btn',
+  'approve-all-btn',
+  'simulation-settlement-receipt',
+];
+for (const testId of REQUIRED_TEST_IDS) {
+  if (!appSrc.includes(`data-testid="${testId}"`)) {
+    console.error(`  [FAIL] App.tsx missing data-testid="${testId}" required by the demo recorder`);
+    failed = true;
+  }
+}
+if (!failed) {
+  console.log(`  [PASS] All ${REQUIRED_TEST_IDS.length} demo-flow test IDs present.`);
 }
 
 console.log('[3/4] Running 24-test JavaScript contract state-machine model...');

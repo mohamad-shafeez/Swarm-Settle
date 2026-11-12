@@ -4,6 +4,9 @@ dist/
 app/dist/
 target/
 contract/target/
+demo/frames/
+demo/frames.ffconcat
+artifacts-store/
 .env
 .env.*
 !.env.example

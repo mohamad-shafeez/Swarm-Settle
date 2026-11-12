@@ -84,6 +84,13 @@ export async function runLiveTestnetWorkflow() {
     );
   }
   console.log(`[LIVE_TESTNET] Verified deployed contract ${contractId} on ${rpcUrl}.`);
+  return {
+    mode: 'LIVE_PREFLIGHT',
+    contract_id: contractId,
+    rpc_url: rpcUrl,
+    verified_at: new Date().toISOString(),
+    note: 'Contract account exists and live credentials are present. Full signed agent execution is performed by the deploy workflow / web app.',
+  };
 }
 
 export async function runSimulationSwarmWorkflow({
@@ -329,14 +336,66 @@ export async function runSimulationSwarmWorkflow({
   return { engine, jobId: job.id, timeline, storedDeliverables };
 }
 
-if (process.argv.includes('--testnet')) {
-  runLiveTestnetWorkflow().catch((err) => {
-    console.error(err.message);
-    process.exit(1);
-  });
-} else if (process.argv.includes('--simulation') || process.argv.includes('--demo')) {
-  runSimulationSwarmWorkflow().catch((err) => {
+const args = process.argv.slice(2);
+const outIndex = args.indexOf('--out');
+const outPath = outIndex >= 0 ? args[outIndex + 1] : null;
+
+async function runSimulationWithReport() {
+  const result = await runSimulationSwarmWorkflow();
+  if (outPath) {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    fs.mkdirSync(path.dirname(path.resolve(outPath)), { recursive: true });
+    fs.writeFileSync(
+      path.resolve(outPath),
+      JSON.stringify(
+        {
+          mode: 'SIMULATION_ONLY',
+          generated_at: new Date().toISOString(),
+          job_id: result.jobId,
+          timeline: result.timeline,
+          deliverables: Array.from(result.storedDeliverables.entries()).map(([agent, saved]) => ({
+            agent,
+            uri: saved.uri,
+            sha256: saved.sha256,
+            byte_length: saved.byteLength,
+          })),
+        },
+        null,
+        2
+      )
+    );
+    console.log(`[SIMULATION] Wrote run report to ${outPath}`);
+  }
+  return result;
+}
+
+if (args.includes('--live') || args.includes('--testnet')) {
+  runLiveTestnetWorkflow()
+    .then(async (report) => {
+      if (outPath) {
+        const fs = await import('node:fs');
+        const path = await import('node:path');
+        fs.mkdirSync(path.dirname(path.resolve(outPath)), { recursive: true });
+        fs.writeFileSync(path.resolve(outPath), JSON.stringify(report, null, 2));
+        console.log(`[LIVE_TESTNET] Wrote preflight report to ${outPath}`);
+      }
+      console.log(
+        '[LIVE_TESTNET] Preflight passed. Use the web app in Live Testnet Mode (or the deploy script) to sign contract calls with funded keys.'
+      );
+    })
+    .catch((err) => {
+      console.error(err.message);
+      process.exit(1);
+    });
+} else if (args.includes('--sim') || args.includes('--simulation') || args.includes('--demo')) {
+  runSimulationWithReport().catch((err) => {
     console.error(err);
     process.exit(1);
   });
+} else {
+  console.log(
+    'Usage: node agents/agent-runner.mjs [--sim|--simulation|--demo] [--out path] | [--live|--testnet]'
+  );
 }
+

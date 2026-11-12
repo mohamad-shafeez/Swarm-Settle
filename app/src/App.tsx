@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatYoctoToNear, parseNearToYocto, YOCTO_PER_NEAR } from './lib/yocto';
 import { sha256HexFromText, sha256HexFromBytes, sha256HexFromFile } from './lib/hashing';
 import {
@@ -177,6 +177,128 @@ const SAMPLE_DELIVERABLE_CONTENT: Record<string, string> = {
   ),
 };
 
+/** Deterministic demo crew used by Simulation Preview mode. */
+const DEMO_CREW = [
+  {
+    agent: 'researchpro.agent.testnet',
+    role: 'Research Specialist',
+    shareKey: 'researchpro.agent.testnet',
+    artifactUri: 'examples/sample-simulation-output/researchpro.agent.testnet-deliverable-r1.json',
+    evidenceNotes:
+      '5-competitor specialty coffee teardown (Trade, Blue Bottle, Atlas, Counter Culture, Onyx).',
+    verifierScore: 95,
+    verifierSummary:
+      'Advisory verification (95/100): All 5 competitor benchmarks and roast-to-order pricing verified against Criteria #1.',
+  },
+  {
+    agent: 'marketmind.agent.testnet',
+    role: 'Business Analyst',
+    shareKey: 'marketmind.agent.testnet',
+    artifactUri: 'examples/sample-simulation-output/marketmind.agent.testnet-deliverable-r1.json',
+    evidenceNotes:
+      'Subscription unit-economics model: 51.8% margin, 4.25x LTV:CAC, 412 bags/mo break-even.',
+    verifierScore: 93,
+    verifierSummary:
+      'Advisory verification (93/100): CAC, LTV, gross margin, and break-even bag math verified against Criteria #2.',
+  },
+  {
+    agent: 'verifyai.agent.testnet',
+    role: 'Quality Auditor',
+    shareKey: 'verifyai.agent.testnet',
+    artifactUri: 'examples/sample-simulation-output/verifyai.agent.testnet-deliverable-r1.json',
+    evidenceNotes:
+      'Complete cross-deliverable audit report bound to criteria hash & file SHA-256 digests.',
+    verifierScore: null,
+    verifierSummary: 'Quality Auditor deliverable submitted; evaluated directly by customer.',
+  },
+] as const;
+
+function buildDemoBids(jobId: number): BidRecord[] {
+  return [
+    {
+      job_id: jobId,
+      agent: 'researchpro.agent.testnet',
+      role: 'Research Specialist',
+      requested_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
+      proposal: 'Benchmark 5 specialty coffee subscription competitors with pricing & positioning.',
+      estimated_hours: 8,
+      status: 'Pending',
+    },
+    {
+      job_id: jobId,
+      agent: 'marketmind.agent.testnet',
+      role: 'Business Analyst',
+      requested_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
+      proposal: 'Build subscription pricing tiers, COGS breakdown, CAC/LTV & break-even model.',
+      estimated_hours: 10,
+      status: 'Pending',
+    },
+    {
+      job_id: jobId,
+      agent: 'verifyai.agent.testnet',
+      role: 'Quality Auditor',
+      requested_payout_yocto: (2n * YOCTO_PER_NEAR).toString(),
+      proposal: 'Verify deliverable SHA-256 integrity and audit against criteria 1 & 2.',
+      estimated_hours: 4,
+      status: 'Pending',
+    },
+    {
+      job_id: jobId,
+      agent: 'codesmith.agent.testnet',
+      role: 'Smart Contract Engineer',
+      requested_payout_yocto: (4n * YOCTO_PER_NEAR).toString(),
+      proposal: 'Write custom Rust staking contract modules.',
+      estimated_hours: 12,
+      status: 'NotSelected',
+      exclusion_reason: 'Excluded: Mission defines no Software/Smart Contract role slot.',
+    },
+  ];
+}
+
+async function buildDemoContributions(
+  jobId: number,
+  criteriaText: string,
+  sharesNear: Record<string, string>
+): Promise<ContributionRecord[]> {
+  const criteriaHash = await sha256HexFromText(criteriaText);
+  const reportHash = await sha256HexFromText(
+    SAMPLE_DELIVERABLE_CONTENT['verifyai.agent.testnet']
+  );
+  const nowNs = BigInt(Date.now()) * 1_000_000n;
+  const reviewDeadlineNs = nowNs + 48n * 3600n * 1_000_000_000n;
+
+  const rows = await Promise.all(
+    DEMO_CREW.map(async (crew) => {
+      const content = SAMPLE_DELIVERABLE_CONTENT[crew.agent];
+      const artifactHash = await sha256HexFromText(content);
+      return {
+        job_id: jobId,
+        agent: crew.agent,
+        role: crew.role,
+        agreed_payout_yocto: parseNearToYocto(sharesNear[crew.shareKey] || '0').toString(),
+        artifact_uri: crew.artifactUri,
+        artifact_sha256: artifactHash,
+        artifact_bytes_text: content,
+        evidence_notes: crew.evidenceNotes,
+        feedback_reason: '',
+        status: 'Submitted' as const,
+        submission_count: 1,
+        revision_count: 0,
+        submitted_at_ns: nowNs.toString(),
+        review_deadline_ns: reviewDeadlineNs.toString(),
+        verifier_score: crew.verifierScore,
+        verifier_summary: crew.verifierSummary,
+        verifier_report_sha256: crew.verifierScore === null ? '' : reportHash,
+        verifier_audited_criteria_hash: crew.verifierScore === null ? '' : criteriaHash,
+        verifier_audited_artifact_sha256: crew.verifierScore === null ? '' : artifactHash,
+        verifier_agent: crew.verifierScore === null ? null : 'verifyai.agent.testnet',
+        customer_rating: null,
+      };
+    })
+  );
+  return rows;
+}
+
 export default function App() {
   const nearConfig = getNearConfig();
   const env = (import.meta as unknown as { env?: Record<string, string> }).env || {};
@@ -214,7 +336,8 @@ export default function App() {
   const [criteriaText, setCriteriaText] = useState<string>(DEFAULT_CRITERIA);
   const [criteriaHash, setCriteriaHash] = useState<string>('');
   const [budgetNear, setBudgetNear] = useState<string>('10');
-  const [maxAgents, setMaxAgents] = useState<number>(3);
+  const maxAgents = 3;
+  const uploadedBytesRef = useRef<Record<string, Uint8Array>>({});
 
   // Crew selection state (in NEAR)
   const [crewSharesNear, setCrewSharesNear] = useState<Record<string, string>>({
@@ -336,9 +459,6 @@ export default function App() {
 
   async function seedSimulationPreview() {
     const hash = await sha256HexFromText(DEFAULT_CRITERIA);
-    const rHash = await sha256HexFromText(SAMPLE_DELIVERABLE_CONTENT['researchpro.agent.testnet']);
-    const mHash = await sha256HexFromText(SAMPLE_DELIVERABLE_CONTENT['marketmind.agent.testnet']);
-    const vHash = await sha256HexFromText(SAMPLE_DELIVERABLE_CONTENT['verifyai.agent.testnet']);
 
     setProfiles([
       {
@@ -472,120 +592,21 @@ export default function App() {
       },
     ]);
 
-    setBids([
-      {
-        job_id: 1,
-        agent: 'researchpro.agent.testnet',
-        role: 'Research Specialist',
-        requested_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
-        proposal: 'Benchmark 5 specialty coffee subscription competitors with pricing & positioning.',
-        estimated_hours: 8,
-        status: 'Pending',
-      },
-      {
-        job_id: 1,
-        agent: 'marketmind.agent.testnet',
-        role: 'Business Analyst',
-        requested_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
-        proposal: 'Build subscription pricing tiers, COGS breakdown, CAC/LTV & break-even model.',
-        estimated_hours: 10,
-        status: 'Pending',
-      },
-      {
-        job_id: 1,
-        agent: 'verifyai.agent.testnet',
-        role: 'Quality Auditor',
-        requested_payout_yocto: (2n * YOCTO_PER_NEAR).toString(),
-        proposal: 'Verify deliverable SHA-256 integrity and audit against criteria 1 & 2.',
-        estimated_hours: 4,
-        status: 'Pending',
-      },
-      {
-        job_id: 1,
-        agent: 'codesmith.agent.testnet',
-        role: 'Smart Contract Engineer',
-        requested_payout_yocto: (4n * YOCTO_PER_NEAR).toString(),
-        proposal: 'Write custom Rust staking contract modules.',
-        estimated_hours: 12,
-        status: 'NotSelected',
-        exclusion_reason: 'Excluded: Mission defines no Software/Smart Contract role slot.',
-      },
-    ]);
+    setBids(buildDemoBids(1));
 
-    setContributions([
-      {
-        job_id: 1,
-        agent: 'researchpro.agent.testnet',
-        role: 'Research Specialist',
-        agreed_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
-        artifact_uri: 'examples/sample-simulation-output/researchpro.agent.testnet-deliverable-r1.json',
-        artifact_sha256: rHash,
-        artifact_bytes_text: SAMPLE_DELIVERABLE_CONTENT['researchpro.agent.testnet'],
-        evidence_notes: '5-competitor specialty coffee teardown (Trade, Blue Bottle, Atlas, Counter Culture, Onyx).',
-        feedback_reason: '',
-        status: 'Submitted',
-        submission_count: 1,
-        revision_count: 0,
-        submitted_at_ns: (BigInt(Date.now()) * 1_000_000n).toString(),
-        review_deadline_ns: ((BigInt(Date.now()) + 48n * 3600n * 1000n) * 1_000_000n).toString(),
-        verifier_score: 95,
-        verifier_summary:
-          'Advisory verification (95/100): All 5 competitor benchmarks and roast-to-order pricing verified against Criteria #1.',
-        verifier_report_sha256: vHash,
-        verifier_audited_criteria_hash: hash,
-        verifier_audited_artifact_sha256: rHash,
-        verifier_agent: 'verifyai.agent.testnet',
-        customer_rating: null,
-      },
-      {
-        job_id: 1,
-        agent: 'marketmind.agent.testnet',
-        role: 'Business Analyst',
-        agreed_payout_yocto: (3n * YOCTO_PER_NEAR).toString(),
-        artifact_uri: 'examples/sample-simulation-output/marketmind.agent.testnet-deliverable-r1.json',
-        artifact_sha256: mHash,
-        artifact_bytes_text: SAMPLE_DELIVERABLE_CONTENT['marketmind.agent.testnet'],
-        evidence_notes: 'Subscription unit-economics model: 51.8% margin, 4.25x LTV:CAC, 412 bags/mo break-even.',
-        feedback_reason: '',
-        status: 'Submitted',
-        submission_count: 1,
-        revision_count: 0,
-        submitted_at_ns: (BigInt(Date.now()) * 1_000_000n).toString(),
-        review_deadline_ns: ((BigInt(Date.now()) + 48n * 3600n * 1000n) * 1_000_000n).toString(),
-        verifier_score: 93,
-        verifier_summary:
-          'Advisory verification (93/100): CAC, LTV, gross margin, and break-even bag math verified against Criteria #2.',
-        verifier_report_sha256: vHash,
-        verifier_audited_criteria_hash: hash,
-        verifier_audited_artifact_sha256: mHash,
-        verifier_agent: 'verifyai.agent.testnet',
-        customer_rating: null,
-      },
-      {
-        job_id: 1,
-        agent: 'verifyai.agent.testnet',
-        role: 'Quality Auditor',
-        agreed_payout_yocto: (2n * YOCTO_PER_NEAR).toString(),
-        artifact_uri: 'examples/sample-simulation-output/verifyai.agent.testnet-deliverable-r1.json',
-        artifact_sha256: vHash,
-        artifact_bytes_text: SAMPLE_DELIVERABLE_CONTENT['verifyai.agent.testnet'],
-        evidence_notes: 'Complete cross-deliverable audit report bound to criteria hash & file SHA-256 digests.',
-        feedback_reason: '',
-        status: 'Submitted',
-        submission_count: 1,
-        revision_count: 0,
-        submitted_at_ns: (BigInt(Date.now()) * 1_000_000n).toString(),
-        review_deadline_ns: ((BigInt(Date.now()) + 48n * 3600n * 1000n) * 1_000_000n).toString(),
-        verifier_score: null,
-        verifier_summary: 'Quality Auditor deliverable submitted; evaluated directly by customer.',
-        verifier_report_sha256: '',
-        verifier_audited_criteria_hash: '',
-        verifier_audited_artifact_sha256: '',
-        verifier_agent: null,
-        customer_rating: null,
-      },
-    ]);
+    setContributions([]);
     setSelectedJobId(1);
+    setRecomputedHashMap({});
+    uploadedBytesRef.current = {};
+  }
+
+  async function handleResetDemo() {
+    await seedSimulationPreview();
+    setStatusBanner({
+      type: 'ok',
+      text: '[SIMULATION] Demo state reset. Mission #1 is open for bids with a 10 NEAR funded budget.',
+    });
+    setActiveTab('dashboard');
   }
 
   async function handleConnectWallet() {
@@ -672,11 +693,13 @@ export default function App() {
         selected_agents: [],
       };
       setJobs([newJob, ...jobs]);
+      setBids((prev) => [...buildDemoBids(nextId), ...prev]);
+      setContributions((prev) => prev.filter((c) => c.job_id !== nextId));
       setSelectedJobId(nextId);
       setActiveTab('marketplace');
       setStatusBanner({
         type: 'ok',
-        text: `[SIMULATION] Created Mission #${nextId} (${budgetNear} NEAR budget, SHA-256 ${computed.slice(0, 16)}…).`,
+        text: `[SIMULATION] Created Mission #${nextId} (${budgetNear} NEAR budget, SHA-256 ${computed.slice(0, 16)}…). Agents are bidding.`,
       });
     } catch (err) {
       setStatusBanner({
@@ -739,6 +762,11 @@ export default function App() {
         return;
       }
 
+      const demoContribs = await buildDemoContributions(
+        currentJob.id,
+        currentJob.criteria_text,
+        crewSharesNear
+      );
       setJobs((prev) =>
         prev.map((j) =>
           j.id === currentJob.id
@@ -758,9 +786,14 @@ export default function App() {
             : b
         )
       );
+      setContributions((prev) => [
+        ...prev.filter((c) => c.job_id !== currentJob.id),
+        ...demoContribs,
+      ]);
+      setInspectedAgent('researchpro.agent.testnet');
       setStatusBanner({
         type: 'ok',
-        text: `[SIMULATION] Crew locked: 3 NEAR + 3 NEAR + 2 NEAR = 8 NEAR allocated (2 NEAR unallocated).`,
+        text: `[SIMULATION] Crew locked: 3 NEAR + 3 NEAR + 2 NEAR = 8 NEAR allocated (2 NEAR unallocated). All three agents submitted deliverables bound to the criteria hash.`,
       });
       setActiveTab('crew');
     } catch (err) {
@@ -783,7 +816,9 @@ export default function App() {
         // Fallback if local sample file is not served over HTTP
       }
     }
-    const bytes = new TextEncoder().encode(rawText.replace(/\r\n/g, '\n').trim());
+    const uploadedBytes = uploadedBytesRef.current[contrib.agent];
+    const bytes =
+      uploadedBytes || new TextEncoder().encode(rawText.replace(/\r\n/g, '\n').trim());
     const computedSha256 = await sha256HexFromBytes(bytes);
     const matches = computedSha256 === contrib.artifact_sha256;
     setRecomputedHashMap((prev) => ({
@@ -797,7 +832,9 @@ export default function App() {
   }
 
   async function handleUploadDeliverableFile(agentId: string, file: File) {
-    const { sha256, bytes, textPreview } = await sha256HexFromFile(file);
+    const { sha256, bytes } = await sha256HexFromFile(file);
+    const fullText = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    uploadedBytesRef.current[agentId] = bytes;
     setContributions((prev) =>
       prev.map((c) =>
         c.job_id === selectedJobId && c.agent === agentId
@@ -805,7 +842,7 @@ export default function App() {
               ...c,
               artifact_uri: file.name,
               artifact_sha256: sha256,
-              artifact_bytes_text: textPreview,
+              artifact_bytes_text: fullText,
             }
           : c
       )
@@ -820,6 +857,68 @@ export default function App() {
     }));
   }
 
+  function handleDownloadDeliverable(contrib: ContributionRecord) {
+    const text = contrib.artifact_bytes_text || SAMPLE_DELIVERABLE_CONTENT[contrib.agent] || '';
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${contrib.agent}-deliverable-r1.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleTamperDeliverable(contrib: ContributionRecord) {
+    const original = contrib.artifact_bytes_text || SAMPLE_DELIVERABLE_CONTENT[contrib.agent] || '{}';
+    const tampered = original.replace('19.5', '19.9').replace('51.8', '68.4');
+    delete uploadedBytesRef.current[contrib.agent];
+    setContributions((prev) =>
+      prev.map((c) =>
+        c.job_id === selectedJobId && c.agent === contrib.agent
+          ? { ...c, artifact_bytes_text: tampered === original ? `${original} ` : tampered }
+          : c
+      )
+    );
+    setRecomputedHashMap((prev) => {
+      const next = { ...prev };
+      delete next[contrib.agent];
+      return next;
+    });
+    setStatusBanner({
+      type: 'err',
+      text: `[SIMULATION] One byte changed in ${contrib.agent}'s file. Run "Recompute SHA-256" to see the digest fail against the committed hash.`,
+    });
+  }
+
+  function handleRestoreDeliverable(contrib: ContributionRecord) {
+    const original = SAMPLE_DELIVERABLE_CONTENT[contrib.agent] || '';
+    delete uploadedBytesRef.current[contrib.agent];
+    setContributions((prev) =>
+      prev.map((c) =>
+        c.job_id === selectedJobId && c.agent === contrib.agent
+          ? {
+              ...c,
+              artifact_uri:
+                DEMO_CREW.find((crew) => crew.agent === contrib.agent)?.artifactUri ||
+                c.artifact_uri,
+              artifact_bytes_text: original,
+            }
+          : c
+      )
+    );
+    setRecomputedHashMap((prev) => {
+      const next = { ...prev };
+      delete next[contrib.agent];
+      return next;
+    });
+    setStatusBanner({
+      type: 'ok',
+      text: `[SIMULATION] Restored the original ${contrib.agent} file. Recompute SHA-256 to confirm the byte-level match.`,
+    });
+  }
+
   /**
    * Calls the contract's `approve_contribution` method for a single agent,
    * matching `pub fn approve_contribution(&mut self, job_id: u64, agent_id: AccountId, rating: Option<u8>)`
@@ -828,6 +927,14 @@ export default function App() {
   async function handleApproveSingleContribution(agentId: string, rating = 5) {
     if (!currentJob) return;
     try {
+      const target = currentContribs.find((c) => c.agent === agentId);
+      if (executionMode === 'SIMULATION' && (!target || target.status === 'Paid')) {
+        setStatusBanner({
+          type: 'err',
+          text: `[SIMULATION] ${agentId} has no pending contribution to approve.`,
+        });
+        return;
+      }
       if (executionMode === 'LIVE_TESTNET') {
         const res = await signAndSendContractCall(
           'approve_contribution',
@@ -852,7 +959,6 @@ export default function App() {
         return;
       }
 
-      const target = currentContribs.find((c) => c.agent === agentId);
       const payout = BigInt(target?.agreed_payout_yocto || '0');
       setContributions((prev) =>
         prev.map((c) =>
@@ -890,7 +996,16 @@ export default function App() {
   async function handleApproveAllAndClaimRefund() {
     if (!currentJob) return;
     try {
-      const pendingContribs = currentContribs.filter((c) => c.status === 'Submitted');
+      const pendingContribs = currentContribs.filter(
+        (c) => c.status === 'Submitted' || c.status === 'ApprovedClaimable'
+      );
+      if (pendingContribs.length === 0 && executionMode === 'SIMULATION') {
+        setStatusBanner({
+          type: 'err',
+          text: '[SIMULATION] No pending crew contributions remain. Approve the crew first, then claim the unallocated refund.',
+        });
+        return;
+      }
       if (executionMode === 'LIVE_TESTNET') {
         let lastHash = '';
         for (const c of pendingContribs) {
@@ -931,29 +1046,39 @@ export default function App() {
         return;
       }
 
-      const paidYocto = 8n * YOCTO_PER_NEAR;
-      const refundYocto = 2n * YOCTO_PER_NEAR;
+      const paidYocto = pendingContribs.reduce(
+        (sum, c) => sum + BigInt(c.agreed_payout_yocto),
+        0n
+      );
+      const refundYocto = BigInt(currentJob.budget_yocto) - BigInt(currentJob.allocated_yocto);
       setJobs((prev) =>
         prev.map((j) =>
           j.id === currentJob.id
             ? {
                 ...j,
                 status: 'Completed',
-                allocated_yocto: paidYocto.toString(),
-                transferred_yocto: paidYocto.toString(),
-                refunded_yocto: refundYocto.toString(),
+                transferred_yocto: (
+                  BigInt(j.transferred_yocto) + paidYocto
+                ).toString(),
+                refunded_yocto: (BigInt(j.refunded_yocto) + refundYocto).toString(),
               }
             : j
         )
       );
       setContributions((prev) =>
         prev.map((c) =>
-          c.job_id === currentJob.id ? { ...c, status: 'Paid', customer_rating: 5 } : c
+          c.job_id === currentJob.id && pendingContribs.some((p) => p.agent === c.agent)
+            ? { ...c, status: 'Paid', customer_rating: 5 }
+            : c
         )
       );
       setStatusBanner({
         type: 'ok',
-        text: `[SIMULATION] Called approve_contribution for each agent (8 NEAR) + claim_remaining_refund (2 NEAR).`,
+        text: `[SIMULATION] Called approve_contribution for ${
+          pendingContribs.length
+        } agents (${formatYoctoToNear(paidYocto.toString())} NEAR) + claim_remaining_refund (${formatYoctoToNear(
+          refundYocto.toString()
+        )} NEAR). Escrow conservation holds.`,
       });
       setActiveTab('escrow');
     } catch (err) {
@@ -1013,6 +1138,16 @@ export default function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {executionMode === 'SIMULATION' && (
+              <button
+                type="button"
+                data-testid="reset-demo-btn"
+                onClick={handleResetDemo}
+                className="ss-btn"
+              >
+                Reset Demo Data
+              </button>
+            )}
             <button
               type="button"
               data-testid="toggle-mode-btn"
@@ -1155,6 +1290,40 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            <div className="ss-grid-3" style={{ marginTop: '16px' }}>
+              <div className="ss-step-card">
+                <div className="ss-step-num">1</div>
+                <div>
+                  <div className="ss-step-title">Committed criteria</div>
+                  <p className="ss-step-text">
+                    The customer funds the mission and commits the acceptance checklist plus its
+                    SHA-256 digest. The contract recomputes the hash on-chain.
+                  </p>
+                </div>
+              </div>
+              <div className="ss-step-card">
+                <div className="ss-step-num">2</div>
+                <div>
+                  <div className="ss-step-title">Role-scoped crew</div>
+                  <p className="ss-step-text">
+                    Specialist agents bid on defined roles. The customer locks the crew, and the
+                    contract enforces sum(payouts) ≤ funded budget.
+                  </p>
+                </div>
+              </div>
+              <div className="ss-step-card">
+                <div className="ss-step-num">3</div>
+                <div>
+                  <div className="ss-step-title">Promise-safe settlement</div>
+                  <p className="ss-step-text">
+                    Approval pays each agreed share. Unallocated funds are refunded, and an expired
+                    review window lets the agent claim its payout.
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </section>
         )}
 
@@ -1186,6 +1355,19 @@ export default function App() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="ss-input"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                  Mission Description
+                </label>
+                <textarea
+                  rows={2}
+                  data-testid="input-mission-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="ss-textarea"
                 />
               </div>
 
@@ -1403,6 +1585,35 @@ export default function App() {
               ))}
             </div>
 
+            {currentContribs.length === 0 && (
+              <div
+                data-testid="deliverables-empty-state"
+                style={{
+                  marginTop: '18px',
+                  padding: '28px',
+                  borderRadius: '14px',
+                  border: '1px dashed #C7BFB2',
+                  background: '#FAF8F5',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: '15px' }}>
+                  No deliverables submitted yet
+                </div>
+                <p style={{ fontSize: '13px', color: '#57534E', margin: '6px 0 14px' }}>
+                  Select a crew on the Bids tab first. In Simulation Preview, the three specialist
+                  agents immediately submit hash-bound deliverables once the crew is locked.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('marketplace')}
+                  className="ss-btn ss-btn-primary"
+                >
+                  Go to Bids &amp; Crew Selection →
+                </button>
+              </div>
+            )}
+
             {activeContrib && (
               <div className="ss-grid-2" style={{ marginTop: '16px' }}>
                 <div className="ss-kpi-box" style={{ background: '#FFFFFF' }}>
@@ -1463,6 +1674,30 @@ export default function App() {
                         }}
                       />
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadDeliverable(activeContrib)}
+                      className="ss-btn"
+                    >
+                      Download File
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="tamper-file-btn"
+                      onClick={() => handleTamperDeliverable(activeContrib)}
+                      className="ss-btn"
+                      style={{ color: '#9F1239', borderColor: '#FECDD3' }}
+                    >
+                      Simulate 1-Byte Tamper
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="restore-file-btn"
+                      onClick={() => handleRestoreDeliverable(activeContrib)}
+                      className="ss-btn"
+                    >
+                      Restore Original
+                    </button>
                   </div>
 
                   {recomputedHashMap[activeContrib.agent] && (
@@ -1544,6 +1779,31 @@ export default function App() {
               </div>
             </div>
 
+            {executionMode === 'SIMULATION' && currentJob.status === 'Completed' && (
+              <div
+                data-testid="simulation-settlement-receipt"
+                style={{
+                  marginTop: '14px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: '#E8F3EC',
+                  border: '1px solid rgba(27, 67, 50, 0.3)',
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#1B4332' }}>
+                  Simulated contract calls (NOT ON-CHAIN) — state-machine receipts
+                </div>
+                <div className="font-mono" style={{ fontSize: '11px', color: '#1B4332', marginTop: '6px', lineHeight: 1.7 }}>
+                  create_job → 10 NEAR funded · select_crew → 8 NEAR allocated ·
+                  approve_contribution ×3 → 8 NEAR paid · claim_remaining_refund → 2 NEAR returned
+                </div>
+                <div style={{ fontSize: '11px', color: '#57534E', marginTop: '6px' }}>
+                  Switch to Live Testnet Mode to sign these same methods with a NEAR wallet and
+                  receive real NearBlocks transaction hashes.
+                </div>
+              </div>
+            )}
+
             {recentTxHashes.length > 0 && (
               <div style={{ marginTop: '14px', padding: '12px', borderRadius: '10px', background: '#E8F3EC', border: '1px solid #1B4332' }}>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#1B4332', marginBottom: '6px' }}>
@@ -1607,6 +1867,38 @@ export default function App() {
               })}
             </div>
 
+            <div className="ss-kpi-row" style={{ marginTop: '16px' }}>
+              <div className="ss-kpi-box">
+                <div className="ss-kpi-label">Escrow Funded</div>
+                <div className="ss-kpi-val font-mono">
+                  {formatYoctoToNear(currentJob.budget_yocto)} NEAR
+                </div>
+              </div>
+              <div className="ss-kpi-box">
+                <div className="ss-kpi-label">Paid to Agents</div>
+                <div className="ss-kpi-val font-mono">
+                  {formatYoctoToNear(currentJob.transferred_yocto)} NEAR
+                </div>
+              </div>
+              <div className="ss-kpi-box">
+                <div className="ss-kpi-label">Refunded to Customer</div>
+                <div className="ss-kpi-val font-mono">
+                  {formatYoctoToNear(currentJob.refunded_yocto)} NEAR
+                </div>
+              </div>
+              <div className="ss-kpi-box ss-kpi-conservation">
+                <div className="ss-kpi-label">Conservation Check</div>
+                <div className="ss-kpi-val font-mono">
+                  {BigInt(currentJob.transferred_yocto) +
+                    BigInt(currentJob.refunded_yocto) +
+                    BigInt(currentJob.claimable_pool_yocto) ===
+                  BigInt(currentJob.budget_yocto)
+                    ? '✓ Balanced'
+                    : 'In Progress'}
+                </div>
+              </div>
+            </div>
+
             <div
               data-testid="operator-economics-note"
               style={{
@@ -1623,6 +1915,10 @@ export default function App() {
             </div>
           </section>
         )}
+        <footer className="ss-footer">
+          <span>SwarmSettle · NEAR Testnet prototype · Testnet NEAR has no live-money value.</span>
+          <span className="font-mono">24/24 contract invariant tests · ABI verified · production build</span>
+        </footer>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 # SwarmSettle — Honest Video Demo Script (`docs/DEMO_SCRIPT.md`)
 
+> **Note:** this is the original 90-second narrative. The recorded 2-minute walkthrough and its exact timings are in [`docs/VIDEO_SCRIPT.md`](./VIDEO_SCRIPT.md).
+
 **Core Positioning:** *A customer funds one task. Specialist AI agents bid and complete separate pieces of work. The customer can inspect evidence, and the NEAR contract enforces the agreed payment and refund rules.*
 
 ---

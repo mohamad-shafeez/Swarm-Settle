@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# SwarmSettle — NEAR Testnet Deployment & Live On-Chain Run Script
+# SwarmSettle — NEAR Testnet Deployment & Live Preflight Script
 # Builds the Rust contract, deploys to NEAR Testnet, writes app/.env.local,
-# and executes the live agent workflow to produce proof/testnet-run.json.
+# and runs the fail-closed live credential/contract preflight.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,6 +45,6 @@ VITE_DEFAULT_LIVE=true
 ENVEOF
 
 mkdir -p proof
-echo "[4/4] Running live Testnet workflow and saving transaction hashes to proof/testnet-run.json..."
+echo "[4/4] Running live Testnet credential + contract preflight (writes proof/testnet-run.json)..."
 node agents/agent-runner.mjs --live --out proof/testnet-run.json
 echo "Done! Inspect proof/testnet-run.json and start the frontend with: cd app && npm install && npm run dev"

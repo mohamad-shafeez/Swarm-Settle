@@ -7,8 +7,16 @@
   "scripts": {
     "test": "node scripts/test-contract-invariants.mjs",
     "verify": "node scripts/verify.mjs",
+    "check": "npm test && npm run verify && npm --prefix app run build",
+    "app:install": "npm --prefix app install",
+    "app:dev": "npm --prefix app run dev",
+    "app:build": "npm --prefix app run build",
     "agents:sim": "node agents/agent-runner.mjs --sim",
     "agents:live": "node agents/agent-runner.mjs --live",
-    "deploy:testnet": "bash scripts/deploy-testnet.sh"
+    "deploy:testnet": "bash scripts/deploy-testnet.sh",
+    "demo:record": "node scripts/record-demo.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.0"
   }
 }

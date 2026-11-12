@@ -52,7 +52,7 @@ export function saveAndVerifyArtifact({ jobId, agentId, round = 1, kind = 'deliv
     );
   }
 
-  const relativePath = `examples/sample-simulation-output/job-${jobId}/${fileName}`;
+  const relativePath = `job-${jobId}/${fileName}`;
   return {
     uri: `local-artifact://${relativePath}`,
     filePath,
@@ -68,7 +68,10 @@ export function readAndVerifyArtifactByUri(uri, expectedSha256 = null) {
     throw new Error(`Unsupported or unconfigured artifact URI scheme: ${uri}`);
   }
   const rel = uri.replace(/^local-artifact:\/\//, '');
-  const fullPath = path.resolve(STORE_ROOT, '..', rel);
+  const fullPath = path.resolve(STORE_ROOT, rel);
+  if (!fullPath.startsWith(STORE_ROOT)) {
+    throw new Error(`Artifact path escapes the artifact store: ${uri}`);
+  }
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Artifact file not found at ${fullPath}`);
   }
