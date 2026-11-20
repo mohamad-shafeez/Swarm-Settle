@@ -68,14 +68,14 @@ export interface ContributionRecord {
   evidence_notes: string;
   feedback_reason: string;
   status:
-    | 'NotSubmitted'
-    | 'Submitted'
-    | 'RevisionRequested'
-    | 'PayoutPending'
-    | 'Paid'
-    | 'ApprovedClaimable'
-    | 'Rejected'
-    | 'Expired';
+  | 'NotSubmitted'
+  | 'Submitted'
+  | 'RevisionRequested'
+  | 'PayoutPending'
+  | 'Paid'
+  | 'ApprovedClaimable'
+  | 'Rejected'
+  | 'Expired';
   submission_count: number;
   revision_count: number;
   submitted_at_ns: string;
@@ -353,7 +353,7 @@ export default function App() {
   >({});
 
   useEffect(() => {
-    sha256HexFromText(criteriaText).then(setCriteriaHash).catch(() => {});
+    sha256HexFromText(criteriaText).then(setCriteriaHash).catch(() => { });
   }, [criteriaText]);
 
   useEffect(() => {
@@ -450,9 +450,8 @@ export default function App() {
       setProfiles([]);
       setStatusBanner({
         type: 'err',
-        text: `NEAR Testnet RPC query failed (${
-          err instanceof Error ? err.message : 'Unreachable'
-        }). Ensure contract ${nearConfig.contractId} is deployed on Testnet.`,
+        text: `NEAR Testnet RPC query failed (${err instanceof Error ? err.message : 'Unreachable'
+          }). Ensure contract ${nearConfig.contractId} is deployed on Testnet.`,
       });
     }
   }
@@ -771,11 +770,11 @@ export default function App() {
         prev.map((j) =>
           j.id === currentJob.id
             ? {
-                ...j,
-                status: 'InProgress',
-                allocated_yocto: totalAllocated.toString(),
-                selected_agents: selections.map((s) => s.agent),
-              }
+              ...j,
+              status: 'InProgress',
+              allocated_yocto: totalAllocated.toString(),
+              selected_agents: selections.map((s) => s.agent),
+            }
             : j
         )
       );
@@ -839,11 +838,11 @@ export default function App() {
       prev.map((c) =>
         c.job_id === selectedJobId && c.agent === agentId
           ? {
-              ...c,
-              artifact_uri: file.name,
-              artifact_sha256: sha256,
-              artifact_bytes_text: fullText,
-            }
+            ...c,
+            artifact_uri: file.name,
+            artifact_sha256: sha256,
+            artifact_bytes_text: fullText,
+          }
           : c
       )
     );
@@ -899,12 +898,12 @@ export default function App() {
       prev.map((c) =>
         c.job_id === selectedJobId && c.agent === contrib.agent
           ? {
-              ...c,
-              artifact_uri:
-                DEMO_CREW.find((crew) => crew.agent === contrib.agent)?.artifactUri ||
-                c.artifact_uri,
-              artifact_bytes_text: original,
-            }
+            ...c,
+            artifact_uri:
+              DEMO_CREW.find((crew) => crew.agent === contrib.agent)?.artifactUri ||
+              c.artifact_uri,
+            artifact_bytes_text: original,
+          }
           : c
       )
     );
@@ -971,9 +970,9 @@ export default function App() {
         prev.map((j) =>
           j.id === currentJob.id
             ? {
-                ...j,
-                transferred_yocto: (BigInt(j.transferred_yocto) + payout).toString(),
-              }
+              ...j,
+              transferred_yocto: (BigInt(j.transferred_yocto) + payout).toString(),
+            }
             : j
         )
       );
@@ -1055,13 +1054,13 @@ export default function App() {
         prev.map((j) =>
           j.id === currentJob.id
             ? {
-                ...j,
-                status: 'Completed',
-                transferred_yocto: (
-                  BigInt(j.transferred_yocto) + paidYocto
-                ).toString(),
-                refunded_yocto: (BigInt(j.refunded_yocto) + refundYocto).toString(),
-              }
+              ...j,
+              status: 'Completed',
+              transferred_yocto: (
+                BigInt(j.transferred_yocto) + paidYocto
+              ).toString(),
+              refunded_yocto: (BigInt(j.refunded_yocto) + refundYocto).toString(),
+            }
             : j
         )
       );
@@ -1074,11 +1073,10 @@ export default function App() {
       );
       setStatusBanner({
         type: 'ok',
-        text: `[SIMULATION] Called approve_contribution for ${
-          pendingContribs.length
-        } agents (${formatYoctoToNear(paidYocto.toString())} NEAR) + claim_remaining_refund (${formatYoctoToNear(
-          refundYocto.toString()
-        )} NEAR). Escrow conservation holds.`,
+        text: `[SIMULATION] Called approve_contribution for ${pendingContribs.length
+          } agents (${formatYoctoToNear(paidYocto.toString())} NEAR) + claim_remaining_refund (${formatYoctoToNear(
+            refundYocto.toString()
+          )} NEAR). Escrow conservation holds.`,
       });
       setActiveTab('escrow');
     } catch (err) {
@@ -1105,9 +1103,8 @@ export default function App() {
       {/* Unmistakable Mode Banner */}
       <div
         data-testid="network-mode-banner"
-        className={`ss-banner ${
-          executionMode === 'LIVE_TESTNET' ? 'ss-banner-live' : 'ss-banner-sim'
-        }`}
+        className={`ss-banner ${executionMode === 'LIVE_TESTNET' ? 'ss-banner-live' : 'ss-banner-sim'
+          }`}
       >
         <span>
           {executionMode === 'LIVE_TESTNET'
@@ -1125,9 +1122,8 @@ export default function App() {
             <h1 className="ss-brand-title">
               <span>SwarmSettle</span>
               <span
-                className={`ss-badge ${
-                  executionMode === 'LIVE_TESTNET' ? 'ss-badge-green' : 'ss-badge-amber'
-                }`}
+                className={`ss-badge ${executionMode === 'LIVE_TESTNET' ? 'ss-badge-green' : 'ss-badge-amber'
+                  }`}
               >
                 {executionMode === 'LIVE_TESTNET' ? 'NEAR Testnet' : 'Simulation Preview'}
               </span>
@@ -1576,9 +1572,8 @@ export default function App() {
                   type="button"
                   data-testid={`select-deliverable-${c.agent}`}
                   onClick={() => setInspectedAgent(c.agent)}
-                  className={`ss-tab ${
-                    activeContrib?.agent === c.agent ? 'ss-tab-active' : ''
-                  }`}
+                  className={`ss-tab ${activeContrib?.agent === c.agent ? 'ss-tab-active' : ''
+                    }`}
                 >
                   {c.role}: {c.agent} ({formatYoctoToNear(c.agreed_payout_yocto)} NEAR · {c.status})
                 </button>
@@ -1892,7 +1887,7 @@ export default function App() {
                   {BigInt(currentJob.transferred_yocto) +
                     BigInt(currentJob.refunded_yocto) +
                     BigInt(currentJob.claimable_pool_yocto) ===
-                  BigInt(currentJob.budget_yocto)
+                    BigInt(currentJob.budget_yocto)
                     ? '✓ Balanced'
                     : 'In Progress'}
                 </div>
